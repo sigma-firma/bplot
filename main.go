@@ -1,3 +1,4 @@
+// bplot is used for visual analysis of cryptocurrencies
 package main
 
 import (
@@ -16,7 +17,7 @@ import (
 )
 
 // ffmpeg to make webm:
-// fmpeg -framerate 60 -i ./btcusd_%03d.png -c:v libvpx-vp9 -pix_fmt yuva420p -lossless 1 out.webm
+// ffmpeg -framerate 60 -i ./btcusd_%03d.png -c:v libvpx-vp9 -pix_fmt yuva420p -lossless 1 out.webm
 
 type quote struct {
 	Date      time.Time
@@ -39,7 +40,7 @@ var et time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC).Add(time
 func main() {
 	qs := parseQuotes("btc_daily.csv")
 	qm = mkQuotes(qs)
-	totalPngFrames := days / 50
+	totalPngFrames := days / 10
 	for i := 0; i <= int(totalPngFrames); i++ {
 		et = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC).Add(time.Hour * 24 * (days / time.Duration(totalPngFrames)) * time.Duration(i))
 		mkgr(i)
@@ -126,33 +127,38 @@ func newPlot() *plot.Plot {
 
 func mkgr(i int) {
 	p := newPlot()
-	// s := strconv.FormatFloat(qm[et].End, 'f', 2, 64)
+	s := strconv.FormatFloat(qm[et].End, 'f', 2, 64)
 
-	// p.Title.Text = et.String() + " -- " + s
+	p.Title.Text = et.Format("Σ(firma)  |  BTC Deflationary Pattern Visualization\n\nJan 02 2006") + "      1 BTC = $" + s + " USD"
+	p.Title.TextStyle.Font.Size = 25
+	p.Title.TextStyle.YAlign = -1.5
+	p.Title.TextStyle.Font.Variant = "Mono"
+	p.Title.Padding = 50
+	// p.Title.TextStyle.XAlign = 0
 	l, err := plotter.NewLine(pricePlot())
 	if err != nil {
 		panic(err)
 	}
-	l.LineStyle.Width = vg.Points(1)
-	l.LineStyle.Color = color.RGBA{R: 255, G: 99, B: 71, A: 255}
+	l.LineStyle.Width = vg.Points(3)
+	l.LineStyle.Color = color.RGBA{R: 192, G: 92, B: 63, A: 1}
 
-	mcl, err := plotter.NewLine(mcPlot())
-	if err != nil {
-		panic(err)
-	}
-	mcl.LineStyle.Width = vg.Points(1)
-	mcl.LineStyle.Color = color.RGBA{R: 255, G: 99, B: 255, A: 255}
+	// mcl, err := plotter.NewLine(mcPlot())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// mcl.LineStyle.Width = vg.Points(1)
+	// mcl.LineStyle.Color = color.RGBA{R: 255, G: 99, B: 255, A: 255}
 
-	vl, err := plotter.NewLine(volumePlot())
-	if err != nil {
-		panic(err)
-	}
-	vl.LineStyle.Width = vg.Points(1)
-	vl.LineStyle.Color = color.RGBA{R: 255, G: 255, B: 20, A: 255}
+	// vl, err := plotter.NewLine(volumePlot())
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// vl.LineStyle.Width = vg.Points(1)
+	// vl.LineStyle.Color = color.RGBA{R: 255, G: 255, B: 20, A: 255}
 
 	p.Add(l)
-	p.Add(mcl)
-	p.Add(vl)
+	// p.Add(mcl)
+	// p.Add(vl)
 	count := fmt.Sprint(i)
 	if len(count) == 1 {
 		count = "00" + count
@@ -186,7 +192,6 @@ func mcPlot() plotter.XYs {
 			break
 		}
 		pts[i].Y = qm[st.Add(time.Hour*24*time.Duration(i))].MarketCap / (20000000)
-		// pts[i].Y = qm[st.Add(time.Hour*24*time.Duration(i))].MarketCap / (20000000)
 	}
 	return pts
 }
