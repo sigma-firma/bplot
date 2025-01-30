@@ -1,6 +1,6 @@
 # bplot
 
-A sample tool for the sigma forma website, allowing us to visualize price 
+A sample tool for the sigma-firma website, allowing us to visualize price 
 movements of various cryptocurrencies. The following media illustrates the 
 repeating deflationary pattern displayed by `bitcoin` since its incepetion:
 
