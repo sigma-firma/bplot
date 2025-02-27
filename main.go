@@ -289,7 +289,7 @@ func progressOutput(i int, totalPngFrames time.Duration) {
 	loading, blanks := "", ""
 
 	// Make the loading bar using percentDone to determine the iteration
-	// count, and thus the number of characters that will be appended to
+	// count, and thus, the number of characters that will be appended to
 	// loading to visually represent what many know as a "progress bar".
 	for q := 0; q <= int(percentDone)/6; q++ {
 		loading = loading + "="
@@ -335,12 +335,17 @@ func clearTerm() {
 // time-series data on bitcoin, splitting the string representation of this
 // file by each new line, and returning them as a []string slice, each line
 // containing un-refined quote data.
-func parseQuotes(quoteFile string) []string {
+func parseQuotes(quoteFile string) (ss [][]string) {
 	b, err := os.ReadFile(quoteFile)
 	if err != nil {
 		log.Println(err)
 	}
-	return strings.Split(string(b), "\n")[1:]
+	var s []string
+	s = append(s, strings.Split(string(b), "\n")[1:]...)
+	for i, l := range s {
+		ss[i] = append(ss[i], strings.Split(l, ",")...)
+	}
+	return
 }
 
 // mkQuotes() takes the slice of unprocessed quotes returned by parseQuotes()
@@ -352,9 +357,8 @@ func parseQuotes(quoteFile string) []string {
 // pocket-size go-anywhere do anything time-series in a [next word here]. We
 // cycle through the lines, parsing the quote data accordingly, and finally,
 // adding it to the map:
-func mkQuotes(quotes_ []string) {
-	for _, q_ := range quotes_ {
-		var q []string = strings.Split(q_, ",")
+func mkQuotes(quotes_ [][]string) {
+	for _, q := range quotes_ {
 		if d, err := time.Parse(time.DateOnly, q[0]); err == nil {
 			qm[d] = &quote{QMap: map[string]float64{
 				"End":       getF64(q[2]),
