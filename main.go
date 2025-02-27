@@ -30,11 +30,21 @@ type quote struct {
 	MarketCap float64
 }
 
+// qm is a map of time.Time types to a *quote type
 var qm map[time.Time]*quote = make(map[time.Time]*quote)
 
-// var et time.Time = time.Date(2023, time.May, 14, 0, 0, 0, 0, time.UTC)
+// days is the nmber of days of data in our CSV file. Some data has multiple
+// quotes per day and so make sure you account for that when figuring this
+// number up.
 var days time.Duration = time.Duration(5242)
+
+// st is the start time. We could start anywhere, but here, we wish to start at
+// the begining, which is July 18 2010.
 var st time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC)
+
+// et is the end time of the data contained in the data set. In this case we
+// add to the start time of July 18 2010 the number of days specified above in
+// hours.
 var et time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC).Add(time.Hour * 24 * (days))
 
 func main() {
@@ -76,15 +86,26 @@ func clearTerm() {
 	}
 }
 
+// parseQuotes() takes our data set, a CSV file containing time-series data on
+// bitcoin, and splits the string by each new line, returning them a slice,
+// each containing unprocessed quote data.
 func parseQuotes(quoteFile string) (quotes_ []string) {
 	b, err := os.ReadFile(quoteFile)
 	if err != nil {
 		log.Println(err)
 	}
 	quotes_ = strings.Split(string(b), "\n")[1:]
-	fmt.Println(len(quotes_))
 	return
 }
+
+// mkQuotes() takes the slice of unprocessed quotes returned by parseQuotes()
+// and processes it, transforming it into our *quote type data structure,
+// creating structured data we can then use for deep analysis, allowing us to
+// acquire hidden insights and valuable knowledge that few will ever know. We
+// also use a map to map a time.Time to each *quote, creating a handy dandy,
+// useful and convenient, nifty little pocket-size go-anywhere do anything
+// time-series in a [next word here]. We cycle through the lines, parsing the
+// quote data accordingly, and finally, adding it to the map:
 func mkQuotes(quotes_ []string) map[time.Time]*quote {
 	for _, q := range quotes_ {
 		if len(q) > 2 {
@@ -118,58 +139,86 @@ func mkQuotes(quotes_ []string) map[time.Time]*quote {
 	return qm
 }
 
+// newPlot() is a helper function that reduces the code base/typing a little.
+// There may be other default options one could add here in the future.
 func newPlot() *plot.Plot {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 	p.HideAxes()
-	return p
-}
 
-func mkgr(i int) {
-	p := newPlot()
+	// Here we format the float to 2 decimal places so that its not
+	// atrociously long.
 	s := strconv.FormatFloat(qm[et].End, 'f', 2, 64)
 
-	p.Title.Text = et.Format("Σ(firma)  |  BTC Deflationary Pattern Visualization\n\nJan 02 2006") + "      1 BTC = $" + s + " USD"
+	// Style the graph
+	p.Title.Text = et.Format(
+		"Σ(firma)  |  BTC Deflationary Pattern "+
+			"Visualization\n\nJan 02 2006") +
+		"      1 BTC = $" + s + " USD"
 	p.Title.TextStyle.Font.Size = 25
 	p.Title.TextStyle.YAlign = -1.5
 	p.Title.TextStyle.Font.Variant = "Mono"
 	p.Title.Padding = 50
 	// p.Title.TextStyle.XAlign = 0
-	l, err := plotter.NewLine(pricePlot())
+
+	return p
+}
+
+// mkgr() is used to further design the graph, see what's inside to learn more.
+func mkgr(i int) error {
+	var (
+		// Get the defaults
+		p *plot.Plot = newPlot()
+
+		// get the lines
+		price  *plotter.Line = getLine(pricePlot(), color.RGBA{R: 192, G: 92, B: 63, A: 1})
+		mCap   *plotter.Line = getLine(mcPlot(), color.RGBA{R: 255, G: 99, B: 255, A: 255})
+		volume *plotter.Line = getLine(volumePlot(), color.RGBA{R: 255, G: 255, B: 20, A: 255})
+	)
+
+	// Add the line(s) to the chart
+	p.Add(price)
+	p.Add(mCap)
+	p.Add(volume)
+
+	// Save a frame
+	w, h := mkDimensions(480, 270)
+	path := formatFileNameCount(i)
+	if err := p.Save(w, h, path); err != nil {
+		return err
+	}
+	return nil
+}
+
+// mkDimensions() returns the width (w) and height (h) dimensions that we
+// intend our chart to embolden. mkDimensions() reduces the code base/typing by
+// creating a type of function I just decided to call a shorthandler, because
+// it could be thought of as "short hand" for what it does.
+func mkDimensions(w, h float64) (vg.Length, vg.Length) {
+	return +vg.Points(w * vg.Millimeter.Points()),
+		vg.Points(h * vg.Millimeter.Points())
+}
+
+// formatFileNameCount() formats the file name count to keep the files we
+// create in order.
+func formatFileNameCount(i int) string {
+	c := fmt.Sprint(i)
+	if len(c) == 1 {
+		return fmt.Sprintf("600/FRAME_00%s.png", c)
+	}
+	return fmt.Sprintf("600/FRAME_0%s.png", c)
+
+}
+
+func getLine(p plotter.XYs, c color.RGBA) (l *plotter.Line) {
+	l, err := plotter.NewLine(p)
 	if err != nil {
 		panic(err)
 	}
-	l.LineStyle.Width = vg.Points(3)
-	l.LineStyle.Color = color.RGBA{R: 192, G: 92, B: 63, A: 1}
 
-	// mcl, err := plotter.NewLine(mcPlot())
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// mcl.LineStyle.Width = vg.Points(1)
-	// mcl.LineStyle.Color = color.RGBA{R: 255, G: 99, B: 255, A: 255}
-
-	// vl, err := plotter.NewLine(volumePlot())
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// vl.LineStyle.Width = vg.Points(1)
-	// vl.LineStyle.Color = color.RGBA{R: 255, G: 255, B: 20, A: 255}
-
-	p.Add(l)
-	// p.Add(mcl)
-	// p.Add(vl)
-	count := fmt.Sprint(i)
-	if len(count) == 1 {
-		count = "00" + count
-	}
-	if len(count) == 2 {
-		count = "0" + count
-	}
-
-	if err := p.Save(480*vg.Millimeter, vg.Points(270*vg.Millimeter.Points()), "600/btcusd_"+count+".png"); err != nil {
-		panic(err)
-	}
+	l.LineStyle.Width = vg.Points(1)
+	l.LineStyle.Color = c
+	return
 }
 
 func pricePlot() plotter.XYs {
