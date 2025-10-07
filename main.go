@@ -236,9 +236,7 @@ func mkLine(p plotter.XYs, c *color.RGBA) (l *plotter.Line) {
 
 // progressOutput() displays a useful progress bar in the terminal while the
 // frames are being processed. We want to add color but then we'd be using a
-// third party dependency.... yikes .. just ... yikes. I don't know what to do
-// dear God help me. HELP MEEEE I DONT DESERVE THIS! I'M A GOOD PERSON NOT THE
-// SERVANT OF THE FUCKING DEVIL (joke)
+// third party dependency.
 func progressOutput(i int, totalPngFrames time.Duration) {
 	// Clear the terminal (this is what makes it look animated).
 	clearTerm()
