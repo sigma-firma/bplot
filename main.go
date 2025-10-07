@@ -72,9 +72,8 @@ var qm map[time.Time]map[string]float64 = make(map[time.Time]map[string]float64)
 
 // title_txt is used by our company, who ever the fuck can edit this code, or
 // whoever tf pays us to edit it, in the formatting of the title text that will
-// be displayed obnoxiously across our entire video. You want this or the chart
-// will look like its made by someone who has no idea wtf they're doing. We
-// know, and we're here to make $10,000,000 minimum. Fuck all non-believers.
+// be displayed across our video. You want this or the chart will look like its
+// made by someone who has no idea wtf they're doing.
 var title_txt string = "Σ(firma)  |  BTC Deflationary Pattern Visualization" +
 	"\n\nJan 02 2006      1 BTC = $"
 
