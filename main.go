@@ -35,7 +35,7 @@
 //
 // We could also make the number of lines/days evenly divisible by 600 by just
 // skipping a number of lines from the beginning, I doubt anyone would notice.
-// Just don't tell the boss what you did. Blame me if he finds out.
+// Just don't tell the boss what you did.
 //
 // Tip: ffmpeg to make webm:
 // ffmpeg -framerate 60 -i ./btcusd_%03d.png -c:v libvpx-vp9 -pix_fmt yuva420p -lossless 1 out.webm
