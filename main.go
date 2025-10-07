@@ -156,7 +156,7 @@ func incrTime(framesDone time.Duration) {
 }
 
 // doFrame() is used to make the graphs, each one acting as a frame for our
-// outoput video, saving them to the appropriate path as well.
+// output video, saving them to the appropriate path as well.
 func doFrame(i int, l *plotter.Line) {
 	// Add line with defaults values to the chart.
 	var p *plot.Plot = newPlot()
