@@ -178,7 +178,7 @@ func doFrame(i int, l *plotter.Line) {
 // coke line its self, just not on a chart. The line is placed atop the chart
 // in the next function, probably.
 func doPlot(data string) plotter.XYs {
-	// don't even try to figure this out on LSD
+	// don't even try to figure this out if you're high
 	pts := make(plotter.XYs, et.Sub(st)/day)
 	for i := range pts {
 		if pts[i].X = float64(i); pts[i].X < float64(len(pts)) {
