@@ -1,8 +1,7 @@
-// bplot is used as a visual analysis tool that processes time-series quote
+// bplot is used as a visual analysis tool for processing time-series quote
 // data such as that used for trading stocks, bonds, commodities, currencies,
 // mutual funds, exchange-traded funds (ETFs), derivatives, cryptocurrencies,
-// real estate, etc. This software was originally written in haste by someone
-// higher than a kite on LSD. Months later, he wrote these comments.
+// real estate, etc.
 //
 // We read data stored in .csv format into a slice of lines, each containing
 // quote data for a single day, then parse each line, transforming the
@@ -60,65 +59,56 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-// quote is a stock or crypto quote or whatever else takes this form.
-type quote struct {
-	Date      time.Time // Just guess
-	DateEnd   time.Time // I dont even know
-	Open      float64   // Day Open price
-	High      float64   // Day high price
-	Low       float64   // Day low price
-	End       float64   // Day end price
-	Volume    float64   // Volume (not sure if this is average high or what).
-	MarketCap float64   // Market Cap (again not sure).
-	// QMap is used in doPlot() to make it so that we can pass an arg to
-	// doPlot("arg") that tells it what metric to retrieve. The quote
-	// struct its self maybe unnecessary. This software was originally
-	// written in haste. Edit: almost done phasing out quote{}.
-	QMap map[string]float64 // dont ask me what Q stands for.
-}
-
 // quotes_path is the path bplot looks for your .csv file containing your
 // quote data. If you don't have this or don't know what the hell I'm talking
-// about, this is equivocal to showing up on test day with no pants, in
-// embarrassing underwear.
+// about, this is equivocal to showing up on test day with no pants.
 var quotes_path string = "btc_daily.csv"
 
 // qm is a map of keys of type time.Time to values of type *quote. This is
 // basically a pocket-sized time-series few will even take notice of, but it's
 // right here, hiding in plain site, just waiting to burst out onto the scene,
 // and change the world for better or for worse or for what the fuck ever.
-var qm map[time.Time]*quote = make(map[time.Time]*quote)
+var qm map[time.Time]map[string]float64 = make(map[time.Time]map[string]float64)
 
-// _24h is a shorthander for time.Hour*24 (1 day in hours). Instantiated with
+// title_txt is used by our company, who ever the fuck can edit this code, or
+// whoever tf pays us to edit it, in the formatting of the title text that will
+// be displayed obnoxiously across our entire video. You want this or the chart
+// will look like its made by someone who has no idea wtf they're doing. We
+// know, and we're here to make $10,000,000 minimum. Fuck all non-believers.
+var title_txt string = "Σ(firma)  |  BTC Deflationary Pattern Visualization" +
+	"\n\nJan 02 2006      1 BTC = $"
+
+// day is a shorthander for time.Hour*24 (1 day in hours). Instantiated with
 // the hopes of making the voodoo contained herein a comprehensible one.
-var _24h time.Duration = time.Hour * 24
+var day time.Duration = time.Hour * 24
 
 // days is the number of days of data in our CSV file. Some data may have
 // multiple quotes per day split up over multiple lines, so make sure you
 // account for that when figuring this number up you awesome mother fucker.
 var days time.Duration = time.Duration(5242)
 
-// st is the start time. We could start anywhere, but here, we wish to start at
-// the beginning, which in our case is: July 18 2010.
-var st time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC)
-
-// et is the end time of the data contained in the data set. In this case we
-// add to the start time of July 18 2010 the number of days specified above in
-// hours.
-var et time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC).Add(time.Hour * 24 * (days))
-
 // totalFrames is used to determine the total number of individual frames we
 // wish to create. Here, we crudely divide the number of days (5242 atm), by
 // 10, which equals 524.2 frames, and is close enough to 600 for this type of
 // data analysis, cause thhis ain't no fuckin rockit surgery, sergio. The
 // external/third party tool "ffmpeg" will be used to stitch the frames
-// together into a video, thus, the actual FPS will be determined by that
+// together into a .webm, thus, the actual FPS will be determined by that
 // command. The more images we create here (and the larger the image
 // dimensions), the longer bplot and ffmpeg will take to process the
 // time-series data. It is advised that low quality settings be used for
 // testing, and high quality settings preserved only for the finest of
 // finalized products.
 var totalFrames time.Duration = days / 10 // close enough for day-scale data.
+
+// st is the start time. We could start anywhere, but here, we wish to start at
+// the beginning, which in our case is: July 18 2010.
+var st time.Time = time.Date(2010, time.July, 18, 0, 0, 0, 0, time.UTC)
+
+// et is the end time of each graph. For this analysis, which is called a
+// fractal analyzer, et starts by graphing the first day of data, then the
+// first and second, then first, second and third, etc. Here, we add to the
+// start time (st) of July 18 2010 the number of days specified above in hours.
+var et time.Time = st.Add(time.Hour * 24 * (days))
 
 // plots is used as a convenience mechanism with real hopes of creating a
 // cleaner code base. When a frame is generated by bplot, (graph/chart/w/ever),
@@ -136,7 +126,7 @@ var plots map[string]float64 = map[string]float64{
 }
 
 // red is used to color the price line.
-var red *color.RGBA = &color.RGBA{R: 192, G: 92, B: 63, A: 1}
+var red *color.RGBA = &color.RGBA{R: 255, G: 65, B: 36, A: 1}
 
 // var blu *color.RGBA = &color.RGBA{R: 255, G: 99, B: 255, A: 255}
 // var yel *color.RGBA = &color.RGBA{R: 255, G: 255, B: 20, A: 255}
@@ -147,9 +137,7 @@ func main() {
 
 	// For each frame...
 	for i := 0; i <= int(totalFrames); i++ {
-		// Increment the time for some reason? This one has to go first
-		// for some reason? Flawed and dubious architecture? Or pure,
-		// unadulterated genius, that few can comprehend? Dam
+		// Increment the end time (et)
 		incrTime(time.Duration(i)) // see: updateEndTime()
 
 		// Make and save a single frame.
@@ -164,9 +152,8 @@ func main() {
 // incrTime(): This voodoo determines how many hours to skip between frames, we
 // take the number of days and divide it by the total number of frames times
 // the number of frames we've already processed: (5,000 / 500) * 50 = 500 hours
-// TODO: Figure out of this even works.
 func incrTime(framesDone time.Duration) {
-	et = st.Add(_24h * (days / totalFrames * framesDone))
+	et = st.Add(day * (days / totalFrames * framesDone))
 }
 
 // doFrame() is used to make the graphs, each one acting as a frame for our
@@ -179,7 +166,7 @@ func doFrame(i int, l *plotter.Line) {
 	// Chart width and height in pixels. The bigger the chart, the longer
 	// bplot will take to run, and the longer ffmpeg will take to run. You
 	// have been warned... but no one can stop you. DO IT.
-	var w, h vg.Length = mkDimensions(480, 270)
+	var w, h vg.Length = mkDimensions(1920, 1080)
 
 	// Build & save this frame, returning as the value any error.
 	if p.Save(w, h, formatFileNameCount(i)) != nil {
@@ -193,13 +180,11 @@ func doFrame(i int, l *plotter.Line) {
 // in the next function, probably.
 func doPlot(data string) plotter.XYs {
 	// don't even try to figure this out on LSD
-	pts := make(plotter.XYs, et.Sub(st)/(time.Hour*24))
+	pts := make(plotter.XYs, et.Sub(st)/day)
 	for i := range pts {
-		pts[i].X = float64(i)
-		if pts[i].X >= float64(et.Sub(st)/(time.Hour*24)) {
-			break
+		if pts[i].X = float64(i); pts[i].X < float64(len(pts)) {
+			pts[i].Y = qm[st.Add(day*time.Duration(i))][data] / plots[data]
 		}
-		pts[i].Y = qm[st.Add(time.Hour*24*time.Duration(i))].QMap[data]
 	}
 	return pts
 }
@@ -335,15 +320,14 @@ func clearTerm() {
 // time-series data on bitcoin, splitting the string representation of this
 // file by each new line, and returning them as a []string slice, each line
 // containing un-refined quote data.
-func parseQuotes(quoteFile string) (ss [][]string) {
+func parseQuotes(quoteFile string) (s [][]string) {
 	b, err := os.ReadFile(quoteFile)
 	if err != nil {
 		log.Println(err)
 	}
-	var s []string
-	s = append(s, strings.Split(string(b), "\n")[1:]...)
-	for i, l := range s {
-		ss[i] = append(ss[i], strings.Split(l, ",")...)
+	lines := strings.Split(string(b), "\n")[1:]
+	for _, l := range lines {
+		s = append(s, strings.Split(l, ","))
 	}
 	return
 }
@@ -360,11 +344,12 @@ func parseQuotes(quoteFile string) (ss [][]string) {
 func mkQuotes(quotes_ [][]string) {
 	for _, q := range quotes_ {
 		if d, err := time.Parse(time.DateOnly, q[0]); err == nil {
-			qm[d] = &quote{QMap: map[string]float64{
+			qm[d] = map[string]float64{
 				"End":       getF64(q[2]),
 				"Volume":    getF64(q[6]),
 				"MarketCap": getF64(q[7]),
-				"Date":      float64(d.UnixMicro())}}
+				"Date":      float64(d.UnixMicro()),
+			}
 		}
 	}
 }
@@ -388,7 +373,7 @@ func newPlot() *plot.Plot {
 
 	// Here we format the float to 2 decimal places so that its not
 	// atrociously long.
-	s := strconv.FormatFloat(qm[et].End, 'f', 2, 64)
+	s := strconv.FormatFloat(qm[et]["End"], 'f', 2, 64)
 
 	// Style the graph
 	p.Title.Text = et.Format(title_txt) + s + " USD"
@@ -400,11 +385,3 @@ func newPlot() *plot.Plot {
 
 	return p
 }
-
-// title_txt is used by our company, who ever the fuck can edit this code, or
-// whoever tf pays us to edit it, in the formatting of the title text that will
-// be displayed obnoxiously across our entire video. You want this or the chart
-// will look like its made by someone who has no idea wtf they're doing. We
-// know, and we're here to make $10,000,000 minimum. Fuck all non-believers.
-var title_txt string = "Σ(firma)  |  BTC Deflationary Pattern Visualization" +
-	"\n\nJan 02 2006      1 BTC = $"
